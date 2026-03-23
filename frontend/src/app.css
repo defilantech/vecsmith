@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+
+@theme {
+	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--color-surface: #0f1117;
+	--color-surface-raised: #1a1d27;
+	--color-surface-overlay: #252836;
+	--color-border: #2e3140;
+	--color-border-focus: #6366f1;
+	--color-accent: #6366f1;
+	--color-accent-hover: #818cf8;
+	--color-text: #e2e8f0;
+	--color-text-muted: #94a3b8;
+	--color-error: #ef4444;
+	--color-success: #22c55e;
+}

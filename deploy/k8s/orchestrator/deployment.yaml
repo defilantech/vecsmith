@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vecsmith-orchestrator
+  namespace: vecsmith
+  labels:
+    app.kubernetes.io/name: vecsmith-orchestrator
+    app.kubernetes.io/part-of: vecsmith
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vecsmith-orchestrator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vecsmith-orchestrator
+        app.kubernetes.io/part-of: vecsmith
+    spec:
+      containers:
+        - name: orchestrator
+          # TODO: Replace with your registry
+          image: your-registry/vecsmith/orchestrator:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: VECSMITH_HOST
+              value: "0.0.0.0"
+            - name: VECSMITH_PORT
+              value: "8080"
+            - name: VECSMITH_LLM_BASE_URL
+              value: "http://your-llm-service:8080/v1"
+            - name: VECSMITH_LLM_MODEL
+              value: "your-model-name"
+            # Optional: API key for authenticated LLM endpoints
+            # - name: VECSMITH_LLM_API_KEY
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: llm-api-key
+            #       key: api-key
+            - name: VECSMITH_FLUX_BASE_URL
+              value: "http://flux-server.vecsmith.svc.cluster.local:8081"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30

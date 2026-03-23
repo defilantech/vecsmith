@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# Node.js
+node_modules/
+frontend/build/
+frontend/.svelte-kit/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Test / runtime
+.pytest_cache/
+*.log
+htmlcov/
+.coverage
+
+# Models (large files)
+models/
+*.gguf
+*.safetensors
+*.bin
+
+# Docker
+.docker/
