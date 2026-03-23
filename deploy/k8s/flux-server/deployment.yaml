@@ -33,6 +33,8 @@ spec:
               value: "8081"
             - name: HF_HOME
               value: "/models/flux"
+            - name: FLUX_QUANTIZE_FP8
+              value: "true"
             # Optional: HuggingFace token for gated models
             # - name: HF_TOKEN
             #   valueFrom:
@@ -42,7 +44,7 @@ spec:
           resources:
             requests:
               cpu: "2"
-              memory: "16Gi"
+              memory: "12Gi"
               nvidia.com/gpu: "1"
             limits:
               nvidia.com/gpu: "1"

@@ -1,27 +1,29 @@
-"""Flux model loader with memory optimization for 16GB VRAM GPUs."""
+"""Flux model loader with FP8 quantization for 16GB VRAM GPUs."""
 
 import logging
 import os
 from pathlib import Path
 
 import torch
-from diffusers import FluxPipeline
+from diffusers import Flux2KleinPipeline
 
 logger = logging.getLogger(__name__)
 
-# Default model for FLUX.1-schnell (Apache 2.0)
-DEFAULT_MODEL_ID = "black-forest-labs/FLUX.1-schnell"
+# Default model: FLUX.2-klein-4B (Apache 2.0, 4B params)
+DEFAULT_MODEL_ID = "black-forest-labs/FLUX.2-klein-4B"
 
 
 def load_flux_pipeline(
     model_id: str = DEFAULT_MODEL_ID,
     cache_dir: str | None = None,
     device: str = "cuda",
-) -> FluxPipeline:
-    """Load Flux pipeline with memory optimization for 16GB VRAM.
+    quantize_fp8: bool = True,
+) -> Flux2KleinPipeline:
+    """Load FLUX.2-klein pipeline with optional FP8 quantization.
 
-    Uses BF16 precision and CPU offloading to fit within a single
-    16GB VRAM GPU.
+    At BF16 the model uses ~13GB VRAM. With FP8 quantization on
+    the transformer, VRAM drops to ~8GB — leaving headroom on
+    16GB GPUs for larger resolutions or batch work.
     """
     if cache_dir is None:
         cache_dir = os.environ.get("HF_HOME", "/models/flux")
@@ -31,31 +33,37 @@ def load_flux_pipeline(
 
     logger.info("Loading Flux pipeline: %s (cache: %s)", model_id, cache_dir)
 
-    pipe = FluxPipeline.from_pretrained(
+    pipe = Flux2KleinPipeline.from_pretrained(
         model_id,
         torch_dtype=torch.bfloat16,
         cache_dir=cache_dir,
     )
 
-    # Sequential CPU offloading moves one layer at a time to GPU,
-    # keeping peak VRAM usage well within 16GB
-    pipe.enable_sequential_cpu_offload(device=device)
+    if quantize_fp8:
+        from optimum.quanto import freeze, qfloat8, quantize
 
-    logger.info("Flux pipeline loaded successfully with CPU offloading")
+        logger.info("Quantizing transformer to FP8...")
+        quantize(pipe.transformer, weights=qfloat8)
+        freeze(pipe.transformer)
+        logger.info("FP8 quantization complete")
+
+    pipe.enable_model_cpu_offload(device=device)
+
+    logger.info("Flux pipeline loaded successfully (fp8=%s)", quantize_fp8)
     return pipe
 
 
 def generate_image(
-    pipe: FluxPipeline,
+    pipe: Flux2KleinPipeline,
     prompt: str,
     width: int = 1024,
     height: int = 1024,
     num_inference_steps: int = 4,
     seed: int | None = None,
 ):
-    """Generate an image using Flux.1-schnell.
+    """Generate an image using FLUX.2-klein-4B.
 
-    FLUX.1-schnell uses 4 inference steps and no CFG (guidance_scale=0.0).
+    Uses 4 inference steps with guidance_scale=1.0.
     Returns a PIL Image.
     """
     generator = None
@@ -67,7 +75,7 @@ def generate_image(
         width=width,
         height=height,
         num_inference_steps=num_inference_steps,
-        guidance_scale=0.0,
+        guidance_scale=1.0,
         generator=generator,
     )
 
