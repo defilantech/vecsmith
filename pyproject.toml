@@ -18,7 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 flux = [
     "torch>=2.4.0",
-    "diffusers>=0.33.0",
+    "diffusers @ git+https://github.com/huggingface/diffusers.git",
     "transformers>=4.44.0",
     "accelerate>=0.33.0",
     "sentencepiece>=0.2.0",

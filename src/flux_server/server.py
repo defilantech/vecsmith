@@ -4,6 +4,7 @@ import asyncio
 import base64
 import io
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
 
@@ -39,8 +40,9 @@ class GenerateResponse(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _pipe
-    logger.info("Loading Flux model...")
-    _pipe = load_flux_pipeline()
+    quantize_fp8 = os.environ.get("FLUX_QUANTIZE_FP8", "true").lower() in ("true", "1", "yes")
+    logger.info("Loading Flux model (fp8=%s)...", quantize_fp8)
+    _pipe = load_flux_pipeline(quantize_fp8=quantize_fp8)
     logger.info("Flux model ready")
     yield
     _pipe = None
@@ -54,7 +56,7 @@ app = FastAPI(title="Flux Image Generation Server", lifespan=lifespan)
 async def health():
     if _pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-    return {"status": "healthy", "model": "FLUX.1-schnell"}
+    return {"status": "healthy", "model": "FLUX.2-klein-4B"}
 
 
 @app.post("/generate", response_model=GenerateResponse)
@@ -105,8 +107,6 @@ async def generate(req: GenerateRequest):
 
 
 def main():
-    import os
-
     import uvicorn
 
     host = os.environ.get("FLUX_HOST", "0.0.0.0")
