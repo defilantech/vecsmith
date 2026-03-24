@@ -40,12 +40,12 @@ def load_flux_pipeline(
     )
 
     if quantize_fp8:
-        from optimum.quanto import freeze, qfloat8, quantize
-
-        logger.info("Quantizing transformer to FP8...")
-        quantize(pipe.transformer, weights=qfloat8)
-        freeze(pipe.transformer)
-        logger.info("FP8 quantization complete")
+        logger.info("Enabling FP8 layerwise casting on transformer...")
+        pipe.transformer.enable_layerwise_casting(
+            storage_dtype=torch.float8_e4m3fn,
+            compute_dtype=torch.bfloat16,
+        )
+        logger.info("FP8 layerwise casting enabled")
 
     pipe.enable_model_cpu_offload(device=device)
 
